@@ -510,7 +510,7 @@ planner_agent/
 ```bash
 # API Keys
 APIFY_TOKEN=your_token_here          # Optional: Real Booking.com data
-DEFAULT_LLM_API_KEY=sk-proj-...      # OpenAI API key
+DEFAULT_LLM_API_KEY=your_openai_api_key_here      # OpenAI API key
 
 # Network
 TRAVEL_NETWORK_HOST=localhost
