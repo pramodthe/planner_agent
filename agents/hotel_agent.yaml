@@ -90,9 +90,10 @@ mods:
 
 connection:
   host: "localhost"
-  port: 8600
+  port: 8700
   agent_group: "booking_agents"
   password: "booking_secret"
+  encryption_enabled: false
   transport: "grpc"
   retry_attempts: 5
   retry_delay: 2
