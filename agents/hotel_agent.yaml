@@ -1,0 +1,98 @@
+# Hotel Agent - Hotel Search and Booking using Apify Booking Scraper
+# Searches hotels, compares prices, provides booking options
+
+type: "openagents.agents.collaborator_agent.CollaboratorAgent"
+agent_id: "hotel-agent"
+
+config:
+  model_name: "gpt-5-mini"
+  max_iterations: 6
+
+  # MCP tools for Apify booking scraper
+  mcp_servers:
+    - name: "apify"
+      description: "Apify platform for web scraping including Booking.com scraper"
+
+  # Custom tools for hotel search
+  tools:
+    - name: "search_hotels_apify"
+      description: "Search hotels using Apify Booking.com scraper"
+      implementation: "tools.hotel_search.search_hotels_apify"
+      input_schema:
+        type: object
+        properties:
+          destination:
+            type: string
+            description: "Destination city or location"
+          checkin_date:
+            type: string
+            description: "Check-in date (YYYY-MM-DD)"
+          checkout_date:
+            type: string
+            description: "Check-out date (YYYY-MM-DD)"
+          travelers:
+            type: integer
+            description: "Number of travelers"
+          budget_preference:
+            type: string
+            description: "Budget preference: budget, mid-range, luxury"
+        required:
+          - destination
+          - checkin_date
+          - checkout_date
+
+  instruction: |
+    You are the HOTEL AGENT specializing in hotel search and booking using Apify Booking scraper.
+    
+    When you receive a hotel search task, use Apify MCP or custom tools to:
+    1. Search hotels on Booking.com for the destination
+    2. Find options across different price ranges
+    3. Check availability for the specified dates
+    4. Provide booking links and hotel details
+    
+    Always provide multiple options from budget to luxury.
+
+  react_to_all_messages: false
+
+  triggers:
+    - event: "search.hotels"
+      instruction: |
+        You received a hotel search request! Extract details from payload:
+        - destination: city or location to search
+        - checkin_date: check-in date (YYYY-MM-DD)
+        - checkout_date: check-out date (YYYY-MM-DD)
+        - travelers: number of guests
+        - budget_preference: "budget" or "luxury" preference
+        
+        Use Apify MCP tools to call Booking.com scraper. Instructions:
+        1. Prepare actor input with search destination, check-in, check-out, guest count
+        2. Call Apify with voyager/booking-scraper
+        3. Filter results by budget_preference (price ascending for budget, review_score for luxury)
+        4. Get Booking.com direct links
+        
+        If Apify MCP not available, use realistic mock Booking.com data:
+        - Budget: 2-3 star hotels, $30-60 per night
+        - Mid-range: 3-4 star hotels, $60-150 per night
+        - Luxury: 4-5 star hotels, $200-500+ per night
+        
+        CRITICAL: Send results with CORRECT event format:
+        send_event(event_name="task.complete", destination_id="travel-coordinator", payload={"task_id": "hotel_search", "results": {"budget_hotels": [...], "mid_range_hotels": [...], "luxury_hotels": [...], "status": "success"}})
+        
+        THEN call finish()
+
+mods:
+  - name: "openagents.mods.workspace.project"
+    enabled: true
+  - name: "openagents.mods.workspace.default"
+    enabled: true
+  - name: "openagents.mods.workspace.messaging"
+    enabled: true
+
+connection:
+  host: "localhost"
+  port: 8600
+  agent_group: "booking_agents"
+  password: "booking_secret"
+  transport: "grpc"
+  retry_attempts: 5
+  retry_delay: 2

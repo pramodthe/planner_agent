@@ -1,0 +1,179 @@
+network:
+  name: TravelPlanningTeam
+  mode: centralized
+  node_id: travel-team-1
+  initialized: true
+  
+  # Transport configuration
+  transports:
+    - type: "http"
+      config:
+        port: 8700
+        serve_studio: true
+        serve_mcp: true
+    - type: "grpc"
+      config:
+        port: 8600
+        max_message_size: 104857600
+        compression: "gzip"
+        keepalive_time: 60000
+        keepalive_timeout: 30000
+
+  manifest_transport: http
+  recommended_transport: grpc
+
+  encryption_enabled: false
+
+  discovery_interval: 10
+  discovery_enabled: true
+
+  max_connections: 50
+  connection_timeout: 30.0
+  retry_attempts: 3
+  heartbeat_interval: 60
+  agent_timeout: 180
+
+  message_queue_size: 1000
+  message_timeout: 45.0
+  message_routing_enabled: true
+
+  default_agent_group: guest
+  requires_password: false
+
+  agent_groups:
+    admin:
+      description: Administrator agents with full permissions
+      password_hash: "adde73956e80fa10e12dbd4783f889c1b051a815454f9f0a5b9ef9ab3a977f01"  # password: admin_secret
+      metadata:
+        permissions:
+        - all
+    coordinators:
+      description: Travel coordinator agents that manage travel requests
+      password_hash: "64a68968a063885dd11b169ae2d73007bd570a913599a4f785e35a9e1d421ce7"  # password: coordinator_secret
+      metadata:
+        permissions:
+        - create_projects
+        - delegate_tasks
+        - communicate_with_users
+        - compile_packages
+    booking_agents:
+      description: Agents that handle flight and hotel bookings
+      password_hash: "3152a8444abddcea4d9915269a4a0e38c5cf1b38148f36e43bd1445cce73fe5f"  # password: booking_secret
+      metadata:
+        permissions:
+        - search_flights
+        - search_hotels
+        - access_booking_apis
+        - report_results
+    planners:
+      description: Agents that create travel itineraries and plans
+      password_hash: "33fbb0d9147fe907594e4d6ed6473508789f24f67a1d39b099882ed04473902c"  # password: planner_secret
+      metadata:
+        permissions:
+        - create_itineraries
+        - research_destinations
+        - calculate_budgets
+        - report_results
+  mods:
+  - name: openagents.mods.workspace.default
+    enabled: true
+    config:
+      custom_events_enabled: true
+  - name: openagents.mods.workspace.project
+    enabled: true
+    config:
+      max_concurrent_projects: 10
+      project_templates:
+        budget_travel:
+          name: Budget Travel Package
+          description: Cheapest travel options - economy flights, budget hotels, free activities
+          agent_groups:
+          - coordinators
+          - booking_agents
+          - planners
+          context: |
+            Budget Travel Planning - CHEAPEST OPTIONS ONLY
+            
+            Focus on absolute lowest costs:
+            - Economy flights with maximum flexibility for best prices
+            - Hostels, budget hotels, shared accommodations
+            - Free walking tours, public parks, free museums
+            - Public transportation only
+            - Street food, local markets, budget restaurants
+            - Money-saving tips and discount strategies
+            
+            Price Targets:
+            - Flights: Economy class, budget airlines
+            - Hotels: Under $50/night (hostels, budget hotels)
+            - Food: Under $30/day per person
+            - Activities: Focus on free options
+            
+            Workflow:
+            1. Coordinator receives budget travel request
+            2. Flight agent finds CHEAPEST flights (economy, budget airlines)
+            3. Hotel agent finds CHEAPEST accommodations (hostels, budget hotels)
+            4. Travel planner creates FREE/LOW-COST itinerary
+            5. Coordinator compiles ultra-budget package
+        luxury_travel:
+          name: Luxury Travel Package
+          description: Most expensive premium options - first class, 5-star hotels, exclusive experiences
+          agent_groups:
+          - coordinators
+          - booking_agents
+          - planners
+          context: |
+            Luxury Travel Planning - PREMIUM OPTIONS ONLY
+            
+            Focus on highest-end experiences:
+            - Business/First class flights only
+            - 5-star hotels, luxury resorts, premium suites
+            - Private tours, exclusive experiences, VIP access
+            - Michelin-starred restaurants, fine dining
+            - Private transfers, luxury cars, helicopter tours
+            - Concierge services, butler service, spa treatments
+            
+            Price Targets:
+            - Flights: Business/First class only
+            - Hotels: 5-star properties, luxury resorts ($300+/night)
+            - Food: Fine dining, premium restaurants ($100+/meal)
+            - Activities: Private tours, exclusive experiences
+            
+            Workflow:
+            1. Coordinator receives luxury travel request
+            2. Flight agent finds PREMIUM flights (business/first class)
+            3. Hotel agent finds LUXURY accommodations (5-star only)
+            4. Travel planner creates EXCLUSIVE itinerary
+            5. Coordinator compiles ultra-luxury package
+  created_by_version: 0.8.5
+network_profile:
+  discoverable: true
+  name: Travel Planning Team
+  description: A comprehensive travel planning system with flight booking (Kiwi MCP), hotel booking (Apify), and itinerary planning agents.
+  tags:
+  - travel
+  - booking
+  - flights
+  - hotels
+  - itinerary
+  - kiwi
+  - apify
+  categories:
+  - travel
+  - booking
+  - planning
+  country: Worldwide
+  required_openagents_version: 0.6.13
+  capacity: 20
+  authentication:
+    type: none
+  host: 0.0.0.0
+  port: 8700
+  # Enable OpenAgents Studio Relay Publishing
+  relay:
+    enabled: true
+    public: true
+    subdomain: travel-agents-live  # Will be available at travel-agents-live.relay.openagents.com
+log_level: INFO
+data_dir: ./data/travel-team
+runtime_limit: null
+shutdown_timeout: 30

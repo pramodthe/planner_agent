@@ -1,0 +1,10 @@
+# Core dependencies
+openagents>=0.1.0
+requests>=2.31.0
+apify-client>=1.7.0
+
+# Search and web scraping
+duckduckgo-search>=3.9.0
+
+# Type stubs
+types-requests>=2.31.0

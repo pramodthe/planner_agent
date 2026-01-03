@@ -1,0 +1,73 @@
+# Flight Agent - Flight Search and Booking using Kiwi MCP
+# Searches flights, compares prices, provides booking options
+
+type: "openagents.agents.collaborator_agent.CollaboratorAgent"
+agent_id: "flight-agent"
+
+config:
+  model_name: "gpt-5-mini"
+  max_iterations: 6
+
+  # MCP tools for Kiwi flight search
+  mcp_servers:
+    - name: "kiwi-com-flight-search"
+      url: "https://mcp.kiwi.com"
+      
+  instruction: |
+    You are the FLIGHT AGENT specializing in flight search and booking using the Kiwi MCP server.
+    
+    When you receive a flight search task, use the available Kiwi MCP tools to:
+    1. Search for flights between the specified origin and destination.
+    2. Analyze the results to identify clearly distinct options:
+       - **Budget**: The absolute cheapest flights (e.g., low-cost carriers, economy).
+       - **Luxury/Premium**: Faster routes, premium airlines, or business class if available/discernible.
+    3. **CRITICAL**: You MUST provide the direct booking/referral link for every flight option you recommend.
+    
+    Always present these options clearly to the user.
+
+  react_to_all_messages: false
+
+  triggers:
+    - event: "search.flights"
+      instruction: |
+        You received a flight search request! Extract details from payload:
+        - origin: departure location
+        - destination: arrival location  
+        - departure_date: outbound date (YYYY-MM-DD)
+        - return_date: return date (YYYY-MM-DD)
+        - travelers: number of passengers
+        - budget_preference: "budget" or "luxury" (use this to prioritize, but show both if possible)
+        
+        Use the Kiwi MCP tool to search for flights.
+        
+        Format instructions for your response:
+        1. Call the Kiwi search tool with the provided parameters.
+        2. Categorize the findings into 'Budget' and 'Luxury' (or 'Best Value' vs 'Fastest/Premium').
+        3. **MANDATORY**: Include the deep link / referral link for each option.
+        
+        Construct the response payload:
+        - status: "success"
+        - budget_options: A list of the best budget flights found, WITH LINKS.
+        - premium_options: A list of the best premium/luxury flights found, WITH LINKS.
+        
+        Send event:
+        send_event(event_name="task.complete", destination_id="travel-coordinator", payload={"task_id": "flight_search", "results": {...}})
+        
+        THEN call finish()
+
+mods:
+  - name: "openagents.mods.workspace.project"
+    enabled: true
+  - name: "openagents.mods.workspace.default"
+    enabled: true
+  - name: "openagents.mods.workspace.messaging"
+    enabled: true
+
+connection:
+  host: "localhost"
+  port: 8600
+  agent_group: "booking_agents"
+  password: "booking_secret"
+  transport: "grpc"
+  retry_attempts: 5
+  retry_delay: 2
