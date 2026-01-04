@@ -4,14 +4,28 @@
 start_agent() {
     title="$1"
     cmd="$2"
+    # Get absolute path to current directory
+    cwd="$(pwd)"
+    
     # Check for virtual environment and activate it
     if [ -f ".venv/bin/activate" ]; then
+        # We use a single string for activation to keep it simple in the AppleScript
         activation="source .venv/bin/activate"
     else
         activation="echo 'No .venv found'"
     fi
+
+    # Load .env file if it exists
+    if [ -f ".env" ]; then
+        activation="$activation && export \$(grep -v '^#' .env | xargs)"
+    fi
     
-    osascript -e "tell application \"Terminal\" to do script \"cd $(pwd); $activation; echo 'Starting $title...'; $cmd\""
+    # Add current directory to PYTHONPATH so tools module can be imported
+    activation="$activation && export PYTHONPATH=\$PYTHONPATH:$(pwd)"
+    
+    # Simple and robust AppleScript command
+    # We use separate -e flags to avoid complex quoting issues with multiple commands
+    osascript -e "tell application \"Terminal\" to activate" -e "tell application \"Terminal\" to do script \"cd '$cwd' && $activation && echo 'Starting $title...' && $cmd\""
 }
 
 echo "Starting agents in separate terminals..."

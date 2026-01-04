@@ -1,114 +1,69 @@
-# Travel Planner Agent - Itinerary Creation and Destination Planning
-# Creates detailed itineraries, researches destinations, provides travel recommendations
-
 type: "openagents.agents.collaborator_agent.CollaboratorAgent"
 agent_id: "travel-planner"
 
 config:
-  model_name: "gpt-5-mini"
+  model_name: "gpt-5-nano-2025-08-07"
   max_iterations: 6
+  mcp_servers:
+    - name: "travel-inventory-mcp"
+      url: "http://127.0.0.1:8801"
 
-  # Custom tools for travel planning
-  tools:
-    - name: "research_destination"
-      description: "Research destination information, attractions, and activities"
-      implementation: "tools.travel_planning.research_destination"
-      input_schema:
-        type: object
-        properties:
-          destination:
-            type: string
-            description: "Destination city or country"
-          duration:
-            type: integer
-            description: "Trip duration in days"
-          interests:
-            type: array
-            items:
-              type: string
-            description: "Traveler interests (culture, food, adventure, etc.)"
-        required:
-          - destination
-
-    - name: "create_itinerary"
-      description: "Create day-by-day travel itinerary"
-      implementation: "tools.travel_planning.create_itinerary"
-      input_schema:
-        type: object
-        properties:
-          destination:
-            type: string
-            description: "Destination"
-          duration:
-            type: integer
-            description: "Trip duration in days"
-          budget:
-            type: string
-            description: "Budget level (budget/mid-range/luxury)"
-          travelers:
-            type: integer
-            description: "Number of travelers"
-        required:
-          - destination
-          - duration
-
-    - name: "calculate_budget"
-      description: "Calculate estimated travel budget breakdown"
-      implementation: "tools.travel_planning.calculate_budget"
-      input_schema:
-        type: object
-        properties:
-          destination:
-            type: string
-            description: "Destination"
-          duration:
-            type: integer
-            description: "Trip duration in days"
-          travelers:
-            type: integer
-            description: "Number of travelers"
-          style:
-            type: string
-            description: "Travel style (budget/luxury)"
-        required:
-          - destination
-          - duration
-          - travelers
+  tools: []
 
   instruction: |
-    You are the TRAVEL PLANNER specializing in creating detailed itineraries and destination research.
-    
-    When you receive an itinerary task, use your tools to:
-    1. Research the destination thoroughly
-    2. Create day-by-day itineraries for different budgets
-    3. Calculate budget breakdowns
-    4. Provide local insights and recommendations
-    
-    Always create both budget and luxury itinerary options.
+    You are the TRAVEL PLANNER.
+    You can use the `travel-inventory-mcp.search_google` tool to find real-time events, prices, and travel tips.
+    Produce a realistic itinerary and cost estimates.
+
+    Output contract:
+    - Day-by-day itinerary aligned to the trip length provided.
+      - If trip > 7 days: provide Day 1-5 detailed + remaining days as themed suggestions.
+    - Include estimated daily costs for **activities, food, and local transport ONLY**.
+    - **DO NOT include flight or hotel prices** (these are handled by other agents).
+    - Include assumptions and 5 practical travel tips.
+
+    You MUST send results via send_event(task.complete) to travel-coordinator.
 
   react_to_all_messages: false
 
   triggers:
+    - event: "project.notification.message_received"
+      instruction: |
+        Ignore chat. Wait for task events.
+        finish()
+
     - event: "create.itinerary"
       instruction: |
-        You received an itinerary creation request! Extract details from payload:
-        - destination: where to travel
-        - duration: trip length in days
-        - budget: overall budget string
-        - preferences: travel interests and style
-        - travelers: number of people
-        
-        Use your custom tools to generate comprehensive travel planning:
-        1. research_destination(destination, duration, interests=[extract from preferences])
-        2. create_itinerary(destination, duration, "budget", travelers)
-        3. create_itinerary(destination, duration, "luxury", travelers)
-        4. calculate_budget(destination, duration, travelers, "budget")
-        5. calculate_budget(destination, duration, travelers, "luxury")
-        
-        Then send comprehensive results with CORRECT event format:
-        send_event(event_name="task.complete", destination_id="travel-coordinator", payload={"task_id": "itinerary_plan", "results": {"destination_info": "...", "budget_itinerary": "...", "luxury_itinerary": "...", "budget_breakdown": "...", "travel_tips": [...], "status": "success"}})
-        
-        THEN call finish()
+        Extract from payload:
+          - task_id (required)
+          - destination
+          - start_date, end_date (if provided) OR duration_days (if provided)
+          - travelers (default 1)
+          - preferences (pace/interests)
+          - budget_preference (budget|luxury|unspecified)
+
+        Produce:
+          - itinerary (day-by-day)
+          - cost_breakdown (food, transport, activities)
+          - total_estimate_per_person and total_estimate_group
+          - assumptions and tips
+
+        Send:
+          send_event(event_name="task.complete", destination_id="travel-coordinator", payload={
+            "task_id": task_id,
+            "results": {
+              "status": "success",
+              "destination": "<destination>",
+              "itinerary": [ ...days... ],
+              "cost_breakdown": { ... },
+              "total_estimate_per_person": "...",
+              "total_estimate_group": "...",
+              "assumptions": [ ... ],
+              "tips": [ ... ]
+            }
+          })
+
+        finish()
 
 mods:
   - name: "openagents.mods.workspace.project"
@@ -120,7 +75,7 @@ connection:
   host: "localhost"
   port: 8700
   agent_group: "planners"
-  password: "planner_secret"
+  password_hash: "travel123"
   encryption_enabled: false
   transport: "grpc"
   retry_attempts: 5

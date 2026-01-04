@@ -1,0 +1,72 @@
+mcp_server:
+  name: travel-inventory-mcp
+  purpose: |
+    MCP wrapper around SerpApi (Google Flights / Google Hotels) for prototype inventory + price snapshots.
+    Provides normalized, structured results so agents do not parse raw SERP content.
+  transport:
+    type: http
+    url: "http://127.0.0.1:8801"  # <-- update to where you run the MCP server
+
+  tools:
+    - name: search_flights
+      description: Search flights and return structured flight options with prices and booking links.
+      inputs:
+        origin: { type: string, description: "IATA code or city/airport" }
+        destination: { type: string, description: "IATA code or city/airport" }
+        depart_date: { type: string, description: "YYYY-MM-DD" }
+        return_date: { type: string, description: "YYYY-MM-DD (optional)" }
+        passengers: { type: integer, description: "Number of passengers" }
+        cabin: { type: string, description: "economy|premium_economy|business|first (optional)" }
+        max_stops: { type: integer, description: "0|1|2 (optional)" }
+        preference: { type: string, description: "cheapest|fastest|best_value (optional)" }
+        max_results: { type: integer, description: "How many options to return (default 10)" }
+      outputs:
+        currency: string
+        options:
+          - price_total: number
+            airline: string
+            depart_time: string
+            arrive_time: string
+            duration: string
+            stops: integer
+            booking_link: string
+            source: string
+
+    - name: search_google
+      description: Search Google for real-time information, events, and travel tips.
+      inputs:
+        query: { type: string, description: "Search query" }
+        location: { type: string, description: "Location override (optional)" }
+        num_results: { type: integer, description: "Number of results (default 5)" }
+      outputs:
+        results:
+          - title: string
+            link: string
+            snippet: string
+
+    - name: search_hotels
+      description: Search hotels and return structured hotel options with nightly and total price estimates and booking links.
+      inputs:
+        city: { type: string, description: "City/area" }
+        checkin_date: { type: string, description: "YYYY-MM-DD" }
+        checkout_date: { type: string, description: "YYYY-MM-DD" }
+        guests: { type: integer, description: "Number of guests" }
+        rooms: { type: integer, description: "Number of rooms" }
+        neighborhood: { type: string, description: "Preferred area (optional)" }
+        min_rating: { type: number, description: "Optional rating threshold" }
+        price_preference: { type: string, description: "cheapest|best_value|luxury (optional)" }
+        max_results: { type: integer, description: "How many options to return (default 10)" }
+      outputs:
+        currency: string
+        options:
+          - name: string
+            neighborhood: string
+            rating: number
+            price_per_night: number
+            total_price: number
+            booking_link: string
+            source: string
+
+  disclaimers:
+    - "Prices are a snapshot and may change at booking."
+    - "Some results may exclude taxes/fees until checkout."
