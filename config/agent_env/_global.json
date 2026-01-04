@@ -2,7 +2,7 @@
   "env_vars": {
     "DEFAULT_LLM_PROVIDER": "openai",
     "DEFAULT_LLM_MODEL_NAME": "gpt-5-mini",
-    "DEFAULT_LLM_API_KEY": "${OPENAI_API_KEY}"
+    "DEFAULT_LLM_API_KEY": ""
   },
-  "updated_at": "2026-01-02T20:46:26.629363"
+  "updated_at": "2026-01-03T20:46:40.677685"
 }

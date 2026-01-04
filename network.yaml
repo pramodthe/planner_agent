@@ -37,7 +37,7 @@ network:
   message_routing_enabled: true
 
   default_agent_group: guest
-  requires_password: false
+  requires_password: true
 
   agent_groups:
     admin:

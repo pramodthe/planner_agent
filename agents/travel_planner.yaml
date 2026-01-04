@@ -75,7 +75,7 @@ connection:
   host: "localhost"
   port: 8700
   agent_group: "planners"
-  password_hash: "travel123"
+  password_hash: "ec93f6d39afff76e75cdeb160d1b2f419c87210d5a6c108d1f905f76ea4aa589"
   encryption_enabled: false
   transport: "grpc"
   retry_attempts: 5
